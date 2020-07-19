@@ -13,8 +13,11 @@ import org.bukkit.plugin.Plugin;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 
 public class DataStore implements Purgeable {
+	
+	private static DataStore ds = null;
 
 	private final SmoothSleep pl;
 	private final Map<World, WorldData> worldData = new HashMap<>();
@@ -27,6 +30,10 @@ public class DataStore implements Purgeable {
 	public ActionBarHelper actionBarHelper;
 	public PlaceholderHelper placeholders;
 	public double baseTimeSpeed = 1.0;
+	
+	public static Optional<DataStore> getInstance() {
+		return ds == null ? Optional.empty() : Optional.of(ds);
+	}
 
 	public DataStore(SmoothSleep plugin) {
 		pl = plugin;
@@ -56,6 +63,8 @@ public class DataStore implements Purgeable {
 			}
 		}
 		SmoothSleep.logDebug("DataStore initialized");
+		
+		ds = this;
 	}
 
 	public void init() {

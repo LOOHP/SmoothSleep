@@ -1,11 +1,16 @@
 package com.luffbox.smoothsleep.listeners;
 
+import com.luffbox.smoothsleep.DataStore;
 import com.luffbox.smoothsleep.PlayerData;
 import com.luffbox.smoothsleep.SmoothSleep;
 import com.luffbox.smoothsleep.WorldData;
 import com.luffbox.smoothsleep.lib.ConfigHelper;
 import com.luffbox.smoothsleep.tasks.UpdateNotifyTask;
+
+import net.md_5.bungee.api.ChatColor;
+
 import org.bukkit.World;
+import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.*;
@@ -49,22 +54,26 @@ public class PlayerListeners implements Listener {
 	@EventHandler(ignoreCancelled = true)
 	public void enterBed(PlayerBedEnterEvent e) {
 		if (!pl.isEnabled()) { return; }
-		World w = e.getPlayer().getWorld();
+		Player p = e.getPlayer();
+		World w = p.getWorld();
 		if (!pl.data.worldEnabled(w)) { return; }
 		WorldData wd = pl.data.getWorldData(w);
 		if (wd == null) { SmoothSleep.logWarning("An error occurred while handing PlayerBedEnterEvent. Missing WorldData."); return; }
 		PlayerData pd = pl.data.getPlayerData(e.getPlayer());
 		if (pd == null) { SmoothSleep.logWarning("An error occurred while handling PlayerBedEnterEvent. Missing PlayerData."); return; }
-		if (wd.isNight()) {
+		//if (wd.isNight()) {
 			pd.getTimers().resetAll();
 			wd.startSleepTick();
-		}
+		//}
+		String msg = DataStore.getInstance().get().config.worlds.get(w).getString(ConfigHelper.WorldSettingKey.ENTERBED_MESSAGE).replace("{USERNAME}", p.getDisplayName());		
+		w.getPlayers().forEach(each -> each.sendMessage(ChatColor.translateAlternateColorCodes('&', msg)));
 	}
 
 	@EventHandler(ignoreCancelled = true)
 	public void leaveBed(PlayerBedLeaveEvent e) {
 		if (!pl.isEnabled()) { return; }
-		World w = e.getPlayer().getWorld();
+		Player p = e.getPlayer();
+		World w = p.getWorld();
 		if (!pl.data.worldEnabled(w)) { return; }
 		WorldData wd = pl.data.getWorldData(w);
 		if (wd == null) { SmoothSleep.logWarning("An error occurred while handing PlayerBedLeaveEvent. Missing WorldData."); return; }
@@ -72,6 +81,13 @@ public class PlayerListeners implements Listener {
 		if (pd == null) { SmoothSleep.logWarning("An error occurred while handling PlayerBedLeaveEvent. Missing PlayerData."); return; }
 		pd.wake();
 		if (wd.getSleepers().isEmpty()) { wd.stopSleepTick(); }
+		if (wd.isNight()) {
+			String msg = DataStore.getInstance().get().config.worlds.get(w).getString(ConfigHelper.WorldSettingKey.LEAVEBED_MESSAGE).replace("{USERNAME}", p.getDisplayName());		
+			w.getPlayers().forEach(each -> each.sendMessage(ChatColor.translateAlternateColorCodes('&', msg)));
+		} else {
+			String msg = DataStore.getInstance().get().config.worlds.get(w).getString(ConfigHelper.WorldSettingKey.MORNING_MESSAGE).replace("{USERNAME}", p.getDisplayName());		
+			p.sendMessage(ChatColor.translateAlternateColorCodes('&', msg));
+		}
 	}
 
 }

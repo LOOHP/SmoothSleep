@@ -35,7 +35,9 @@ public class SleepTickTask extends BukkitRunnable {
 			return;
 		}
 		boolean isNight = wd.isNight();
+		long time = wd.getTime();
 		if (isNight) { wd.timestep(); }
+		if (time > SmoothSleep.SLEEP_TICKS_END - 2500 && time < SmoothSleep.SLEEP_TICKS_END + 500) { wd.clearWeather(); }
 		if (!isNight || sleepers.isEmpty()) { cancel(); }
 	}
 }

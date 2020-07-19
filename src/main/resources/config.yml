@@ -67,3 +67,7 @@ worlds:
       show-if-awake: true
       color: 'BLUE'
       title: '&a{SLEEPERS}/{TOTAL} Sleeping &3- &b{12H}:{MIN} {MER_UPPER}'
+    messages:
+      enter-bed: '&b{USERNAME} &3has gone to sleep! The night skips faster as more players sleep!'
+      leave-bed: '&b{USERNAME} &ehad left the bed!'
+      morning: '&6Good Morning, {USERNAME}! \O/'

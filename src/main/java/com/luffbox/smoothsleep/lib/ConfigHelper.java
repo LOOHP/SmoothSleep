@@ -74,6 +74,9 @@ public class ConfigHelper {
 		add(MORNING_SUBTITLE);
 		add(ACTIONBAR_TITLE);
 		add(BOSSBAR_TITLE);
+		add(ENTERBED_MESSAGE);
+		add(LEAVEBED_MESSAGE);
+		add(MORNING_MESSAGE);
 	}};
 
 	public ConfigHelper(SmoothSleep ss) {
@@ -182,6 +185,10 @@ public class ConfigHelper {
 		BOSSBAR_WAKERS("boss-bar.show-if-awake", boolean.class),
 		BOSSBAR_COLOR("boss-bar.color", String.class),
 		BOSSBAR_TITLE("boss-bar.title", String.class),
+		
+		ENTERBED_MESSAGE("messages.enter-bed", String.class),
+		LEAVEBED_MESSAGE("messages.leave-bed", String.class),
+		MORNING_MESSAGE("messages.morning", String.class),
 		;
 
 		public final String key;

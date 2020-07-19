@@ -102,7 +102,9 @@ public class WorldData implements Purgeable {
 
 	public long getTime() { return w.getTime(); }
 
-	public boolean isNight() { return getTime() >= SmoothSleep.SLEEP_TICKS_START && getTime() < SmoothSleep.SLEEP_TICKS_END; }
+	public boolean isNight() { return (getTime() >= SmoothSleep.SLEEP_TICKS_START && getTime() < SmoothSleep.SLEEP_TICKS_END) || w.isThundering(); }
+	
+	public boolean isNightRaw() { return getTime() >= SmoothSleep.SLEEP_TICKS_START && getTime() < SmoothSleep.SLEEP_TICKS_END; }
 
 	public double getTimeRatio() {
 		long current = getTime();
