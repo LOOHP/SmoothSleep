@@ -19,7 +19,7 @@ worlds:
     heal-slept-villagers: true
     morning-sound: 'ENTITY_PLAYER_LEVELUP'
     morning-particle-options:
-      particle: 'VILLAGER_HAPPY'
+      particle: 'HAPPY_VILLAGER'
       amount: 20
       radius: 0.5
       enabled: true
