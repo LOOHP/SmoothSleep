@@ -97,9 +97,20 @@ public class ReflectUtil {
 	 * @throws SecurityException If the desired field cannot be made accessible
 	 */
 	public static Field getField(Class<?> clazz, boolean declared, String fieldName) throws NoSuchFieldException, SecurityException {
-		Field field = declared ? clazz.getDeclaredField(fieldName) : clazz.getField(fieldName);
-		field.setAccessible(true);
-		return field;
+		if (!declared) {
+			Field field = clazz.getField(fieldName);
+			field.setAccessible(true);
+			return field;
+		}
+
+		for (Class<?> current = clazz; current != null; current = current.getSuperclass()) {
+			try {
+				Field field = current.getDeclaredField(fieldName);
+				field.setAccessible(true);
+				return field;
+			} catch (NoSuchFieldException ignored) {}
+		}
+		throw new NoSuchFieldException(fieldName);
 	}
 
 	/**
