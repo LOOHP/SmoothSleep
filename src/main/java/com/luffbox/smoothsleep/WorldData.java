@@ -9,6 +9,7 @@ import org.bukkit.World;
 import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitTask;
 
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -26,6 +27,11 @@ public class WorldData implements Purgeable {
 	private BukkitTask sleepTickTask;
 	private double timescale = 0.0, timeTickRemain;
 	private int counter = 0;
+	private int uiCounter = 0;
+	// UI (action bar, boss bar, titles) is refreshed every this many sleep ticks instead of every tick
+	private static final int UI_UPDATE_INTERVAL = 5;
+	// Sleepers and wakers computed once per timestep, null outside of it
+	private Set<Player> tickSleepers, tickWakers;
 
 	public WorldData(SmoothSleep plugin, World world, ConfigHelper.WorldSettings settings) {
 		pl = plugin;
@@ -56,6 +62,7 @@ public class WorldData implements Purgeable {
 	}
 
 	public Set<Player> getSleepers() {
+		if (tickSleepers != null) return tickSleepers;
 		Set<Player> sleepers = new HashSet<>();
 		getPlayers().forEach(plr -> {
 			if (plr.isSleeping()) sleepers.add(plr);
@@ -78,6 +85,7 @@ public class WorldData implements Purgeable {
 	}
 
 	public Set<Player> getWakers() {
+		if (tickWakers != null) return tickWakers;
 		Set<Player> wakers = new HashSet<>();
 		getPlayers().forEach(plr -> {
 			if (!plr.isSleeping()) {
@@ -129,6 +137,19 @@ public class WorldData implements Purgeable {
 	}
 
 	public void timestep() {
+		// Every UI string asks for the sleeper and waker counts, which scan all players
+		// (with AFK/vanish checks). Compute them once for the whole step.
+		tickSleepers = Collections.unmodifiableSet(getSleepers());
+		tickWakers = Collections.unmodifiableSet(getWakers());
+		try {
+			doTimestep();
+		} finally {
+			tickSleepers = null;
+			tickWakers = null;
+		}
+	}
+
+	private void doTimestep() {
 		long wtime = getTime();
 		updateTimescale();
 
@@ -151,11 +172,13 @@ public class WorldData implements Purgeable {
 	public void timestepTimers(int timescale, boolean isMorning) {
 		final int ticks = timescale + 1;
 		boolean setSleepTicks = counter > 50;
+		boolean updateUI = isMorning || uiCounter % UI_UPDATE_INTERVAL == 0;
+		uiCounter++;
 		getPlayers().forEach(plr -> {
 			PlayerData pd = pl.data.getPlayerData(plr);
 			if (pd != null) {
 				if (isMorning) { setFinishedSleeping(plr); }
-				pd.updateUI();
+				if (updateUI) pd.updateUI();
 				if (isMorning) {
 					pd.hideBossBar();
 					pd.clearActionBar();
@@ -191,6 +214,7 @@ public class WorldData implements Purgeable {
 		if (!pl.data.isPluginEnabled()) return;
 		if (sleepTickRunning()) return;
 		tickHelper = new TickHelper(w, ws, ws.getTickOptions());
+		uiCounter = 0;
 		SleepTickTask stt = new SleepTickTask(pl, this);
 		sleepTickTask = stt.runTaskTimer(pl, 0L, 0L);
 	}
