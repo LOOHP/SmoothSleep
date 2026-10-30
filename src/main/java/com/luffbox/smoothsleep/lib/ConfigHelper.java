@@ -226,20 +226,42 @@ public class ConfigHelper {
 			return opt;
 		}
 
-		public int getInt(WorldSettingKey setting) { return setting.type == int.class ? conf.getInt(w, setting.key) : 0; }
-		public double getDouble(WorldSettingKey setting) { return setting.type == double.class ? conf.getDouble(w, setting.key) : 0.0; }
-		public boolean getBoolean(WorldSettingKey setting) { return setting.type == boolean.class && conf.getBoolean(w, setting); }
-		public String getString(WorldSettingKey setting) { return setting.type == String.class ? conf.getString(w, setting) : ""; }
+		// Values are read every sleep tick for every player, so cache them. A reload builds
+		// new WorldSettings objects, and ConfigHelper.set(World, ...) clears the cache.
+		private final Map<WorldSettingKey, Object> cache = new EnumMap<>(WorldSettingKey.class);
+		private final Map<WorldSettingKey, Object> barCache = new EnumMap<>(WorldSettingKey.class);
+
+		public int getInt(WorldSettingKey setting) { return setting.type == int.class ? (Integer) cache.computeIfAbsent(setting, k -> conf.getInt(w, k.key)) : 0; }
+		public double getDouble(WorldSettingKey setting) { return setting.type == double.class ? (Double) cache.computeIfAbsent(setting, k -> conf.getDouble(w, k.key)) : 0.0; }
+		public boolean getBoolean(WorldSettingKey setting) { return setting.type == boolean.class && (Boolean) cache.computeIfAbsent(setting, k -> conf.getBoolean(w, k)); }
+		public String getString(WorldSettingKey setting) {
+			if (setting.type != String.class) return "";
+			if (!cache.containsKey(setting)) cache.put(setting, conf.getString(w, setting));
+			return (String) cache.get(setting);
+		}
 		public ConfigurationSection getConfSection(WorldSettingKey setting) { return setting.type == ConfigurationSection.class ? conf.getConfSection(w, setting) : new MemoryConfiguration(); }
 		public Sound getSound(WorldSettingKey setting) { return setting.type == String.class ? conf.getSound(w, setting) : null; }
 		public Particle getParticle(WorldSettingKey setting) { return setting.type == String.class ? conf.getParticle(w, setting) : null; }
-		public BarColor getBarColor(WorldSettingKey setting) { return setting.type == String.class ? conf.getBarColor(w, setting) : null; }
-		public BarStyle getBarStyle(WorldSettingKey setting) { return setting.type == String.class ? conf.getBarStyle(w, setting) : null; }
+		public BarColor getBarColor(WorldSettingKey setting) {
+			if (setting.type != String.class) return null;
+			if (!barCache.containsKey(setting)) barCache.put(setting, conf.getBarColor(w, setting));
+			return (BarColor) barCache.get(setting);
+		}
+		public BarStyle getBarStyle(WorldSettingKey setting) {
+			if (setting.type != String.class) return null;
+			if (!barCache.containsKey(setting)) barCache.put(setting, conf.getBarStyle(w, setting));
+			return (BarStyle) barCache.get(setting);
+		}
 		public ParticlePatternType getPatternType(WorldSettingKey setting) { return setting.type == String.class ? conf.getPatternType(w, setting) : null; }
 
 		public boolean contains(WorldSettingKey setting) { return conf.contains(w, setting); }
 
 		public void set(WorldSettingKey setting, Object value) { conf.set(w, setting.key, value); }
+
+		public void clearCache() {
+			cache.clear();
+			barCache.clear();
+		}
 	}
 
 	public int getInt(String path) { return ss.getConfig().getInt(path, ss.getConfig().getDefaults().getInt(path)); }
@@ -347,7 +369,11 @@ public class ConfigHelper {
 
 	public void set(String path, Object value) { ss.getConfig().set(path, value); }
 	public void set(GlobalSettingKey key, Object value) { set(key.key, value); }
-	public void set(World w, String path, Object value) { set(path(w) + "." + path, value); }
+	public void set(World w, String path, Object value) {
+		set(path(w) + "." + path, value);
+		WorldSettings ws = worlds.get(w);
+		if (ws != null) ws.clearCache();
+	}
 	public void set(World w, WorldSettingKey key, Object value) { set(w, key.key, value); }
 
 	public void save() { ss.saveConfig(); }
